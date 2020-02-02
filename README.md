@@ -22,8 +22,8 @@ optional arguments:
   -h, --help            show this help message and exit
   --resistors RESISTORS, -r RESISTORS
                         The available resistor values, as a comma-separated
-                        list, for example "100R,330,4k7,10k,1.0M" (Default:
-                        All E6 series values)
+                        list, for example "E12,100R,330,4k7,10k,1.0M"
+                        (Default: E6)
   --maximum MAXIMUM, --max MAXIMUM, -m MAXIMUM
                         The maximum number of resistors to use. Increasing
                         this value exponentially increases computation time!
@@ -36,13 +36,21 @@ optional arguments:
 
 ## Examples
 
-Find a resistance close to 50 ohms, using the E6 series resistors:
+Find a resistance close to 50 ohms, using the default E6 series resistors:
 ```console
 $ find_resistance.py 50
 50Ω (+0Ω/+0%): (100||100)Ω
 
 ─┬─[100Ω]──┬─
  └─[100Ω]──┘ 
+```
+
+Find a resistance close to 54 ohms, using the E12 series resistors:
+```console
+$ find_resistance.py --resistors E12 54
+54Ω (+0Ω/+0%): (27+27)Ω
+
+─[27Ω]──[27Ω]─
 ```
 
 Find a resistance close to 4850 ohms, using only resistors with 100, 300, 4700, 10000 or 1000000 ohms. Use at most 3 resistors, show the best 3 results:

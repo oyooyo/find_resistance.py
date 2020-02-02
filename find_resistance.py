@@ -173,7 +173,7 @@ def create_resistances(resistor_values, maximum_number_of_resistors):
 def create_resistances_ordered_by_target_value(resistor_values, maximum_number_of_resistors, target_value):
 	return sorted(list(create_resistances(resistor_values, maximum_number_of_resistors)), key=(lambda resistance: (resistance.absolute_deviation_from_value(target_value), resistance.number_of_resistors)))
 
-# Parse resistance value <resistance_value>, which may either be a number or a string (for example "4.7k", "4k7" "4700R")
+# Parse the resistance value <resistance_value>, which may either be a number or a string (for example "4.7k", "4k7" "4700R")
 def parse_resistance_value(resistance_value):
 	import re
 	if isinstance(resistance_value, str):
@@ -188,8 +188,30 @@ def parse_resistance_value(resistance_value):
 	else:
 		return resistance_value
 
-# The resistor values of the E6 series
-E6_SERIES_RESISTOR_VALUES = [round_number(multiplier * (10**e)) for e in range(8) for multiplier in [1.0, 1.5, 2.2, 3.3, 4.7, 6.8]]
+# Returns an array with all multipliers in the E series <n>
+def create_e_series_multipliers(n):
+	if n in [3, 6, 12, 24]:
+		return {
+			3: [1.0, 2.2, 4.7],
+			6: [1.0, 1.5, 2.2, 3.3, 4.7, 6.8],
+			12: [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2],
+			24: [1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1],
+		}[n]
+	digits = (1 if (n <= 24) else 2)
+	v = (10 ** (1.0 / n))
+	return [round(pow(v, m), digits) for m in range(n)]
+
+# Returns an array with all resistance values in the E series <n>
+def create_e_series(n):
+	return [round_number(multiplier * (10**e)) for e in range(8) for multiplier in create_e_series_multipliers(n)]
+
+# Parse the resistance values identified by <resistors_id>
+def parse_resistance_values(resistors_id):
+	import re
+	try:
+		return create_e_series(int(re.fullmatch(r'[Ee](\d+)', resistors_id).groups()[0]))
+	except AttributeError:
+		return [parse_resistance_value(resistors_id)]
 
 # ----
 # Main
@@ -207,8 +229,8 @@ if __name__ == '__main__':
 	argument_parser.add_argument(
 		'--resistors', '-r',
 		type = str,
-		default = ','.join(str(value) for value in E6_SERIES_RESISTOR_VALUES),
-		help = 'The available resistor values, as a comma-separated list, for example "100R,330,4k7,10k,1.0M" (Default: All E6 series values)',
+		default = 'E6',
+		help = 'The available resistor values, as a comma-separated list, for example "E12,100R,330,4k7,10k,1.0M" (Default: E6)',
 	)
 	argument_parser.add_argument(
 		'--maximum', '--max', '-m',
@@ -224,7 +246,7 @@ if __name__ == '__main__':
 	)
 	arguments = argument_parser.parse_args()
 	target_value = parse_resistance_value(arguments.target_value)
-	resistor_values = [parse_resistance_value(resistor_value) for resistor_value in arguments.resistors.split(',')]
+	resistor_values = sorted(list(set([resistor_value for resistors_id in arguments.resistors.split(',') for resistor_value in parse_resistance_values(resistors_id)])))
 	resistances = create_resistances_ordered_by_target_value(resistor_values, arguments.maximum, target_value)
 	if (arguments.results > 0):
 		resistances = resistances[:arguments.results]
